@@ -1,0 +1,64 @@
+REM =================Begin Batch File ==================
+@echo off
+
+set emailfrom="EmailAddress"
+set emailto="EmailAddress"
+
+:Setup_SMTP_Server // Section for setting the name of the exchange server to be used and type of authentication to be used. 1 means to use NTLM, 2 means to user Kerberos, 0 is for Basic authentication 
+certutil -setreg exit\smtp\SMTPServer "ExchangeServerNameOrIP" 
+certutil -setreg exit\smtp\SMTPAuthenticate 0 
+REM If we need to authenticate to the above SMTP server, set the Username (in quotes) and the password to authenticate with
+REM certutil -setsmtpinfo -p <password> "smtpaccount"
+
+:Setup_CA_For_Exit_Module // Section for turning events on or off. In this case, on.
+:note // to disable an event, set a minus sign instead of a plus, eg -EXITEVENT_CERTISSUED 
+certutil -setreg exit\smtp\eventfilter +EXITEVENT_CRLISSUED 
+certutil -setreg exit\smtp\eventfilter +EXITEVENT_CERTDENIED 
+certutil -setreg exit\smtp\eventfilter +EXITEVENT_CERTISSUED 
+certutil -setreg exit\smtp\eventfilter +EXITEVENT_CERTPENDING 
+certutil -setreg exit\smtp\eventfilter +EXITEVENT_CERTUNREVOKED
+certutil -setreg exit\smtp\eventfilter +EXITEVENT_CERTRETRIEVEPENDING
+certutil -setreg exit\smtp\eventfilter +EXITEVENT_CERTREVOKED 
+certutil -setreg exit\smtp\eventfilter +EXITEVENT_SHUTDOWN 
+certutil -setreg exit\smtp\eventfilter +EXITEVENT_STARTUP
+
+:CrlIssued // Section for setting CRLIssued parameters. 
+certutil -setreg exit\smtp\CRLissued\To %emailto%
+certutil -setreg exit\smtp\CRLissued\From %emailfrom%
+
+:Denied // Section for setting Denied parameters 
+certutil -setreg exit\smtp\templates\default\Denied\From %emailfrom% 
+certutil -setreg exit\smtp\templates\default\Denied\To %emailto%
+
+:Certificate_Issued // Section for setting Issued parameters. 
+certutil -setreg exit\smtp\templates\default\Issued\From %emailfrom% 
+certutil -setreg exit\smtp\templates\default\Issued\To %emailto%
+
+:Certificate_Pending // Section for setting Pending parameters. 
+Certutil -setreg exit\smtp\templates\default\Pending\To %emailto% 
+certutil -setreg exit\smtp\templates\default\Pending\From %emailfrom%
+
+:Certificate_Revoked // Section for setting Revoked parameters. 
+certutil -setreg exit\smtp\templates\default\Revoked\From %emailfrom% 
+certutil -setreg exit\smtp\templates\default\Revoked\To %emailto%
+
+:Certificate_Revoked // Section for setting UnRevoked parameters. 
+certutil -setreg exit\smtp\templates\default\unRevoked\From %emailfrom% 
+certutil -setreg exit\smtp\templates\default\unRevoked\To %emailto%
+
+:Certificate_Revoked // Section for setting Retrieve Pending parameters. 
+certutil -setreg exit\smtp\templates\default\retrievepending\From %emailfrom% 
+certutil -setreg exit\smtp\templates\default\retrievepending\To %emailto%
+
+:Certificate_Authority_Shutdown // Section for setting Shutdown parameters. 
+certutil -setreg exit\smtp\Shutdown\To %emailto% 
+certutil -setreg exit\smtp\Shutdown\From %emailfrom%
+
+:Certificate_Authority_Startup // Section for setting Startup parameters. 
+certutil -setreg exit\smtp\Startup\To %emailto% 
+certutil -setreg exit\smtp\Startup\From %emailfrom%
+
+net stop certsvc & net start certsvc 
+echo Certificate Services SMTP Exit module has now been configured. 
+pause
+REM ============ End Batch File ===============
